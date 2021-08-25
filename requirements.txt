@@ -1,0 +1,7 @@
+transformers
+datasets
+spacy
+streamlit
+sklearn
+torch
+plotly
