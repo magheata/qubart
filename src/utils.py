@@ -1,14 +1,20 @@
-from datasets import load_dataset
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModel
-from sklearn.metrics.pairwise import cosine_similarity
+import constants
 import numpy as np
-import torch
-import streamlit as st
-from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
-import matplotlib.pyplot as plt
-import plotly
 import plotly.graph_objs as go
+import pyLDAvis.sklearn
+import streamlit as st
+import torch
+
+from datasets import load_dataset
+from sklearn.decomposition import LatentDirichletAllocation
+from sklearn.decomposition import PCA
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.manifold import TSNE
+from sklearn.metrics.pairwise import cosine_similarity
+from spacy.lang.en import English
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModel
+
+
 
 @st.cache(persist=True, suppress_st_warning=True)
 def load_corpus(data_files, ext_type='csv'):
@@ -85,9 +91,19 @@ def get_summary(input_text, model_name='sshleifer/distilbart-cnn-12-6'):
     return tokenizer.batch_decode(outputs, skip_special_tokens=True)
 
 
-def title(text, size, color="white"):
-    st.markdown(f'<h1 style="font-weight:bolder;font-size:{size}px;color:{color};text-align:center;">{text}</h1>',
-                unsafe_allow_html=True)
+def title(text, size, color="white", text_align="center", h_type="h1", sidebar=False):
+    if sidebar:
+        st.sidebar.markdown(f'<{h_type} style="font-weight:bolder;'
+                    f'font-size:{size}px;'
+                    f'color:{color};'
+                    f'text-align:{text_align};">{text}</{h_type}>',
+                    unsafe_allow_html=True)
+    else:
+        st.markdown(f'<{h_type} style="font-weight:bolder;'
+                    f'font-size:{size}px;'
+                    f'color:{color};'
+                    f'text-align:{text_align};">{text}</{h_type}>',
+                    unsafe_allow_html=True)
 
 
 def header(text):
@@ -99,7 +115,6 @@ def display_scatterplot_3D(embeddings, sentences, user_input=None, label=None, c
     '''
     https://github.com/marcellusruben/Word_Embedding_Visualization
     '''
-
 
     if dim_red == 'PCA':
         three_dim = PCA(random_state=0).fit_transform(embeddings)[:, :3]
@@ -155,7 +170,7 @@ def display_scatterplot_3D(embeddings, sentences, user_input=None, label=None, c
             font=dict(
                 family="Courier New",
                 size=25,
-                color="white"
+                color="black"
             )),
         font=dict(
             family=" Courier New ",
@@ -164,7 +179,6 @@ def display_scatterplot_3D(embeddings, sentences, user_input=None, label=None, c
         width=1000,
         height=1000
     )
-
 
     plot_figure = go.Figure(data=data, layout=layout)
 
@@ -189,7 +203,7 @@ def display_scatterplot_2D(embeddings, sentences, user_input=None, label=None, c
         x=two_dim[count:, 0],
         y=two_dim[count:, 1],
         text=sentences[count:],
-        name='input words',
+        name='Sentence',
         textposition="top center",
         textfont_size=10,
         mode='markers+text',
@@ -216,7 +230,7 @@ def display_scatterplot_2D(embeddings, sentences, user_input=None, label=None, c
             font=dict(
                 family="Courier New",
                 size=15,
-                color="white"
+                color="black"
             )),
         font=dict(
             family=" Courier New ",
@@ -229,3 +243,34 @@ def display_scatterplot_2D(embeddings, sentences, user_input=None, label=None, c
     plot_figure = go.Figure(data=data, layout=layout)
 
     st.plotly_chart(plot_figure)
+
+
+def spacy_tokenizer(sentence):
+    parser = English()
+    mytokens = parser(sentence)
+    mytokens = [word.lower_ for word in mytokens]
+    # mytokens = [word.lemma_.lower().strip() if word.lemma_ != "PRON" else word.lower_ for word in mytokens]
+    mytokens = [word for word in mytokens if word not in constants.STOPWORDS and word not in constants.PUNCTUATIONS]
+    mytokens = " ".join([i for i in mytokens])
+    return mytokens
+
+
+# Functions for printing keywords for each topic
+def selected_topics(model, vectorizer, top_n=10):
+    for idx, topic in enumerate(model.components_):
+        print("Topic %d:" % (idx))
+        print([(vectorizer.get_feature_names()[i], topic[i])
+               for i in topic.argsort()[:-top_n - 1:-1]])
+
+
+def get_LDA_visualizer(data, topics, mds="tsna"):
+    vectorizer = CountVectorizer(stop_words='english', lowercase=True, token_pattern='[a-zA-Z\-][a-zA-Z\-]{2,}')
+    tokens = spacy_tokenizer(data)
+    data_vectorized = vectorizer.fit_transform([tokens])
+    # Latent Dirichlet Allocation Model
+    lda = LatentDirichletAllocation(n_components=topics, max_iter=10, learning_method='online', verbose=True)
+    data_lda = lda.fit_transform(data_vectorized)
+    # Keywords for topics clustered by Latent Dirichlet Allocation
+    dash = pyLDAvis.sklearn.prepare(lda, data_vectorized, vectorizer, mds=mds)
+    html = pyLDAvis.prepared_data_to_html(dash)
+    return html
