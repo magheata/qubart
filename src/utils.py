@@ -1,5 +1,6 @@
 import constants
 import numpy as np
+import pandas as pd
 import plotly.graph_objs as go
 import pyLDAvis.sklearn
 import streamlit as st
@@ -14,6 +15,29 @@ from sklearn.metrics.pairwise import cosine_similarity
 from spacy.lang.en import English
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModel
 
+
+class DimReductor():
+    def __init__(self, data):
+        self.PCA = PCA(random_state=0).fit(data)
+
+
+@st.cache(suppress_st_warning=True, allow_output_mutation=True)
+def get_sentence_embeddings(input_data, model_name='sentence-transformers/paraphrase-mpnet-base-v2'):
+    '''
+    '''
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModel.from_pretrained(model_name)
+    encoded_input = tokenizer(input_data, padding=True, truncation=True, return_tensors='pt')
+
+    # Compute token embeddings
+    with torch.no_grad():
+        model_output = model(**encoded_input)
+
+    # Perform pooling. In this case, max pooling.
+    sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
+
+    return sentence_embeddings.detach().numpy()
 
 
 @st.cache(persist=True, suppress_st_warning=True)
@@ -53,25 +77,6 @@ def mean_pooling(model_output, attention_mask):
 
 
 @st.cache(suppress_st_warning=True)
-def get_sentence_embeddings(input_data, model_name='sentence-transformers/paraphrase-mpnet-base-v2'):
-    '''
-    '''
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModel.from_pretrained(model_name)
-
-    encoded_input = tokenizer(input_data, padding=True, truncation=True, return_tensors='pt')
-
-    # Compute token embeddings
-    with torch.no_grad():
-        model_output = model(**encoded_input)
-
-    # Perform pooling. In this case, max pooling.
-    sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
-
-    return sentence_embeddings.detach().numpy()
-
-
-@st.cache(suppress_st_warning=True)
 def get_similar_sentences(sentence, other_sentences, similarity_threshold=0.7):
     '''
     '''
@@ -94,10 +99,10 @@ def get_summary(input_text, model_name='sshleifer/distilbart-cnn-12-6'):
 def title(text, size, color="white", text_align="center", h_type="h1", sidebar=False):
     if sidebar:
         st.sidebar.markdown(f'<{h_type} style="font-weight:bolder;'
-                    f'font-size:{size}px;'
-                    f'color:{color};'
-                    f'text-align:{text_align};">{text}</{h_type}>',
-                    unsafe_allow_html=True)
+                            f'font-size:{size}px;'
+                            f'color:{color};'
+                            f'text-align:{text_align};">{text}</{h_type}>',
+                            unsafe_allow_html=True)
     else:
         st.markdown(f'<{h_type} style="font-weight:bolder;'
                     f'font-size:{size}px;'
@@ -110,111 +115,57 @@ def header(text):
     st.markdown(f"<p style='color:white;'>{text}</p>", unsafe_allow_html=True)
 
 
-def display_scatterplot_3D(embeddings, sentences, user_input=None, label=None, color_map=None, annotation='On',
-                           dim_red='PCA', perplexity=0, learning_rate=0, iteration=0, topn=0, sample=10):
-    '''
-    https://github.com/marcellusruben/Word_Embedding_Visualization
-    '''
-
+def get_dim_reduction_data(dim_reductor, data, labels, text_legend,
+                           dim_red='PCA', textposition="top center",
+                           textfont_color="black", marker_color="black", marker_opacity=0.8):
     if dim_red == 'PCA':
-        three_dim = PCA(random_state=0).fit_transform(embeddings)[:, :3]
+        two_dim = dim_reductor.PCA.transform(data)[:, :2]
     else:
-        three_dim = TSNE(n_components=3, random_state=0, perplexity=perplexity, learning_rate=learning_rate,
-                         n_iter=iteration).fit_transform(embeddings)[:, :3]
-
-    color = 'blue'
-    quiver = go.Cone(
-        x=[0, 0, 0],
-        y=[0, 0, 0],
-        z=[0, 0, 0],
-        u=[0.5, 0, 0],
-        v=[0, 0.5, 0],
-        w=[0, 0, 0.5],
-        anchor="tail",
-        colorscale=[[0, color], [1, color]],
-        showscale=False
-    )
-
-    data = [quiver]
-
-    count = 0
-
-    trace_input = go.Scatter3d(
-        x=three_dim[count:, 0],
-        y=three_dim[count:, 1],
-        z=three_dim[count:, 2],
-        text=sentences[count:],
-        name='input words',
-        textposition="top center",
-        textfont={
-            'size': 15,
-            'color': 'blue'
-        },
-        mode='markers+text',
-        marker={
-            'size': 10,
-            'opacity': 1,
-            'color': 'black'
-        }
-    )
-
-    data.append(trace_input)
-
-    # Configure the layout.
-    layout = go.Layout(
-        margin={'l': 0, 'r': 0, 'b': 0, 't': 0},
-        showlegend=True,
-        legend=dict(
-            x=1,
-            y=0.5,
-            font=dict(
-                family="Courier New",
-                size=25,
-                color="black"
-            )),
-        font=dict(
-            family=" Courier New ",
-            size=15),
-        autosize=False,
-        width=1000,
-        height=1000
-    )
-
-    plot_figure = go.Figure(data=data, layout=layout)
-
-    st.plotly_chart(plot_figure)
-
-
-def display_scatterplot_2D(embeddings, sentences, user_input=None, label=None, color_map=None, annotation='On',
-                           dim_red='PCA', perplexity=0, learning_rate=0, iteration=0, topn=0, sample=10):
-    '''
-    https://github.com/marcellusruben/Word_Embedding_Visualization
-    '''
-    if dim_red == 'PCA':
-        two_dim = PCA(random_state=0).fit_transform(embeddings)[:, :2]
-    else:
-        two_dim = TSNE(random_state=0, perplexity=perplexity, learning_rate=learning_rate,
-                       n_iter=iteration).fit_transform(embeddings)[:, :2]
-
-    data = []
+        two_dim = dim_reductor.TSNE.transform(data)[:, :2]
     count = 0
 
     trace_input = go.Scatter(
         x=two_dim[count:, 0],
         y=two_dim[count:, 1],
-        text=sentences[count:],
-        name='Sentence',
-        textposition="top center",
-        textfont_size=10,
+        text=labels[count:],
+        name=text_legend,
+        textposition=textposition,
+        textfont={
+            'size': 10,
+            'color': textfont_color
+        },
         mode='markers+text',
         marker={
             'size': 15,
-            'opacity': 0.8,
-            'color': 'black'
+            'opacity': marker_opacity,
+            'color': marker_color
         }
     )
+    return trace_input
 
-    data.append(trace_input)
+
+def display_scatterplot_2D(dim_reductor, embeddings_text, sentences_text, marker_color="black", marker_opacity=0.8,
+                           embeddings_summary=None, sentences_summary=None, summary_marker_color="red",
+                           summary_marker_opacity=0.8,
+                           embeddings_filtered=None, sentences_filtered=None, filtered_marker_color="blue",
+                           filtered_marker_opacity=0.8):
+    '''
+    https://github.com/marcellusruben/Word_Embedding_Visualization
+    '''
+
+    data = []
+    data.append(get_dim_reduction_data(dim_reductor=dim_reductor, data=embeddings_text, labels=sentences_text,
+                                       text_legend='Original text', marker_color=marker_color, marker_opacity=marker_opacity))
+    if embeddings_filtered is not None and sentences_filtered is not None:
+        data.append(
+            get_dim_reduction_data(dim_reductor=dim_reductor, data=embeddings_filtered, labels=sentences_filtered,
+                                   text_legend='Filtered text', textposition="bottom center", textfont_color=filtered_marker_color,
+                                   marker_color=filtered_marker_color, marker_opacity=filtered_marker_opacity))
+    if embeddings_summary is not None and sentences_summary is not None:
+        data.append(get_dim_reduction_data(dim_reductor=dim_reductor, data=embeddings_summary, labels=sentences_summary,
+                                           text_legend='Summary', textposition="bottom center",
+                                           textfont_color=summary_marker_color, marker_color=summary_marker_color,
+                                           marker_opacity=summary_marker_opacity))
 
     # Configure the layout.
     layout = go.Layout(
@@ -255,14 +206,6 @@ def spacy_tokenizer(sentence):
     return mytokens
 
 
-# Functions for printing keywords for each topic
-def selected_topics(model, vectorizer, top_n=10):
-    for idx, topic in enumerate(model.components_):
-        print("Topic %d:" % (idx))
-        print([(vectorizer.get_feature_names()[i], topic[i])
-               for i in topic.argsort()[:-top_n - 1:-1]])
-
-
 def get_LDA_visualizer(data, topics, mds="tsna"):
     vectorizer = CountVectorizer(stop_words='english', lowercase=True, token_pattern='[a-zA-Z\-][a-zA-Z\-]{2,}')
     tokens = spacy_tokenizer(data)
@@ -274,3 +217,15 @@ def get_LDA_visualizer(data, topics, mds="tsna"):
     dash = pyLDAvis.sklearn.prepare(lda, data_vectorized, vectorizer, mds=mds)
     html = pyLDAvis.prepared_data_to_html(dash)
     return html
+
+
+def get_df_rouge_scores(scores, rouge_measures, index):
+    rows = []
+    for rouge_measure in rouge_measures:
+        for score in scores:
+            new_row = {'Precision': score[rouge_measure]["r"],
+                       'Recall': score[rouge_measure]["p"],
+                       'F-Score': score[rouge_measure]["f"]}
+            rows.append(new_row)
+    dataframe = pd.DataFrame(rows, columns=('Precision', 'Recall', 'F-Score'), index=index)
+    return dataframe
