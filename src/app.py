@@ -77,8 +77,6 @@ ut.title(TITLE_FILTER, 40, STREAMLIT_COLOR_SUBTITLE, text_align="left")
 ut.title("Filtering options", size=20, color=STREAMLIT_COLOR_TITLE, sidebar=True)
 filter_by = st.sidebar.text_input("Filter with:", "Bran")
 similarity_threshold = st.sidebar.slider('Choose similarity threshold:', 0.0, 1.0, 0.3)
-if similarity_threshold > 0.3:
-    st.sidebar.warning("Filtered text might not be what you expected, consider decreasing threshold. ")
 similar_sentences = ut.get_similar_sentences(ut.get_sentence_embeddings(filter_by), embedded_sentences,
                                           similarity_threshold=similarity_threshold)
 filtered_text = ""
@@ -89,6 +87,8 @@ for idx in similar_sentences:
 
 if filtered_text_clean == "":
     st.warning('Could not filter text with given input.')
+    st.sidebar.warning("Consider decreasing threshold to ensure filtering is possible.")
+
 else:
     filtered_text_clean
     if show_ner == "On":
