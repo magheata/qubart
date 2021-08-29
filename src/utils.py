@@ -10,7 +10,6 @@ from datasets import load_dataset
 from sklearn.decomposition import LatentDirichletAllocation
 from sklearn.decomposition import PCA
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.manifold import TSNE
 from sklearn.metrics.pairwise import cosine_similarity
 from spacy.lang.en import English
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, AutoModel
@@ -148,24 +147,34 @@ def display_scatterplot_2D(dim_reductor, embeddings_text, sentences_text, marker
                            embeddings_summary=None, sentences_summary=None, summary_marker_color="red",
                            summary_marker_opacity=0.8,
                            embeddings_filtered=None, sentences_filtered=None, filtered_marker_color="blue",
-                           filtered_marker_opacity=0.8):
+                           filtered_marker_opacity=0.8,
+                           embeddings_input=None, sentences_input=None, input_marker_color="purple",
+                           input_marker_opacity=0.8
+                           ):
     '''
     https://github.com/marcellusruben/Word_Embedding_Visualization
     '''
 
     data = []
     data.append(get_dim_reduction_data(dim_reductor=dim_reductor, data=embeddings_text, labels=sentences_text,
-                                       text_legend='Original text', marker_color=marker_color, marker_opacity=marker_opacity))
+                                       text_legend='Original text', marker_color=marker_color,
+                                       marker_opacity=marker_opacity))
     if embeddings_filtered is not None and sentences_filtered is not None:
         data.append(
             get_dim_reduction_data(dim_reductor=dim_reductor, data=embeddings_filtered, labels=sentences_filtered,
-                                   text_legend='Filtered text', textposition="bottom center", textfont_color=filtered_marker_color,
+                                   text_legend='Filtered text', textposition="bottom center",
+                                   textfont_color=filtered_marker_color,
                                    marker_color=filtered_marker_color, marker_opacity=filtered_marker_opacity))
     if embeddings_summary is not None and sentences_summary is not None:
         data.append(get_dim_reduction_data(dim_reductor=dim_reductor, data=embeddings_summary, labels=sentences_summary,
                                            text_legend='Summary', textposition="bottom center",
                                            textfont_color=summary_marker_color, marker_color=summary_marker_color,
                                            marker_opacity=summary_marker_opacity))
+    if embeddings_input is not None and sentences_input is not None:
+        data.append(get_dim_reduction_data(dim_reductor=dim_reductor, data=embeddings_input, labels=sentences_input,
+                                           text_legend='Input summary', textposition="bottom center",
+                                           textfont_color=input_marker_color, marker_color=input_marker_color,
+                                           marker_opacity=input_marker_opacity))
 
     # Configure the layout.
     layout = go.Layout(
@@ -196,17 +205,17 @@ def display_scatterplot_2D(dim_reductor, embeddings_text, sentences_text, marker
     st.plotly_chart(plot_figure)
 
 
+@st.cache(suppress_st_warning=True)
 def spacy_tokenizer(sentence):
     parser = English()
     mytokens = parser(sentence)
     mytokens = [word.lower_ for word in mytokens]
-    # mytokens = [word.lemma_.lower().strip() if word.lemma_ != "PRON" else word.lower_ for word in mytokens]
     mytokens = [word for word in mytokens if word not in constants.STOPWORDS and word not in constants.PUNCTUATIONS]
     mytokens = " ".join([i for i in mytokens])
     return mytokens
 
 
-def get_LDA_visualizer(data, topics, mds="tsna"):
+def get_LDA_visualizer(data, topics):
     vectorizer = CountVectorizer(stop_words='english', lowercase=True, token_pattern='[a-zA-Z\-][a-zA-Z\-]{2,}')
     tokens = spacy_tokenizer(data)
     data_vectorized = vectorizer.fit_transform([tokens])
@@ -214,11 +223,12 @@ def get_LDA_visualizer(data, topics, mds="tsna"):
     lda = LatentDirichletAllocation(n_components=topics, max_iter=10, learning_method='online', verbose=True)
     data_lda = lda.fit_transform(data_vectorized)
     # Keywords for topics clustered by Latent Dirichlet Allocation
-    dash = pyLDAvis.sklearn.prepare(lda, data_vectorized, vectorizer, mds=mds)
+    dash = pyLDAvis.sklearn.prepare(lda, data_vectorized, vectorizer, mds="pcoa")
     html = pyLDAvis.prepared_data_to_html(dash)
     return html
 
 
+@st.cache(suppress_st_warning=True)
 def get_df_rouge_scores(scores, rouge_measures, index):
     rows = []
     for rouge_measure in rouge_measures:
