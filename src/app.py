@@ -9,8 +9,8 @@ import spacy_streamlit
 import streamlit as st
 import utils as ut
 from rouge import Rouge
-
 import os
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 st.set_option('deprecation.showPyplotGlobalUse', False)
@@ -30,43 +30,46 @@ ut.title(f"Season {corpus_clean[REV_SEASON][selected_ep]},"
             f" Episode {corpus_clean[REV_EPISODE][selected_ep]}."
             f" {corpus_clean[REV_TITLE][selected_ep]}", 30, STREAMLIT_COLOR_SUBTITLE)
 # Review of the selected episode, used in the filtering and summarization operations.
-episode_got_clean = corpus_clean[REV_REVIEW][int(re.search(r'\d+', review).group()) - 1]
+episode_clean = corpus_clean[REV_REVIEW][int(re.search(r'\d+', review).group()) - 1]
 # Review of the selected episode, used for visualization purposes.
-episode_got = corpus[REV_REVIEW][int(re.search(r'\d+', review).group()) - 1]
+episode = corpus[REV_REVIEW][int(re.search(r'\d+', review).group()) - 1]
 # Get a list of all the sentences from the review, appending a "." at the end of each one.
-sentences = episode_got_clean.split(SEPARATOR)
+sentences = episode_clean.split(SEPARATOR)
 sentences = [sentence + "." for sentence in sentences]
 # Show the episode review
 expander = st.expander(TEXT_REV_EXPANDER)
-expander.write(episode_got)
+expander.write(episode)
 # Create the embeddings of the sentences
+type_embedding = st.sidebar.radio(TEXT_EMBEDDING, OPTIONS_EMBEDDING)
 embedded_sentences = ut.get_sentence_embeddings(sentences)
+dim_reductor = ut.DimReductor(embedded_sentences)
+
+if type_embedding == "doc2vec":
+    embedded_document = ut.get_sentence_embeddings(episode_clean.replace("_", "."))
+
 #endregion
 
 #region EDA
 ut.title(TITLE_EDA, 40, STREAMLIT_COLOR_SUBTITLE, text_align="left")
 ut.title("EDA options", size=20, color=STREAMLIT_COLOR_TITLE, sidebar=True)
-dim_red = st.sidebar.selectbox(TEXT_DIM_REDUCTION, OPTIONS_DIM_REDUCTION)
-
-dim_reductor = ut.DimReductor(embedded_sentences)
 
 topics = st.sidebar.slider(TEXT_NUM_TOPICS, 1, 10, 5)
 
 show_ner = st.sidebar.radio(TEXT_NER, OPTIONS_NER)
 
-
-st.header('2D Visualization')
-st.write('For more detail about each point (just in case it is difficult to read the annotation), you can hover around each points to see the words. You can expand the visualization by clicking expand symbol in the top right corner of the visualization.')
-ut.display_scatterplot_2D(dim_reductor=dim_reductor, embeddings_text=embedded_sentences, sentences_text=sentences)
+if type_embedding == "sent2vec":
+    st.header('2D Visualization')
+    st.write('For more detail about each point (just in case it is difficult to read the annotation), you can hover around each points to see the words. You can expand the visualization by clicking expand symbol in the top right corner of the visualization.')
+    ut.display_scatterplot_2D(dim_reductor=dim_reductor, embeddings_text=embedded_sentences, sentences_text=sentences)
 
 # Creating a spaCy object
 nlp = spacy.load(SPACY_LANG_MODEL)
 if show_ner == "On":
-    doc = nlp(episode_got)
+    doc = nlp(episode)
     spacy_streamlit.visualize_ner(doc, labels=nlp.get_pipe('ner').labels)
 
 # Creating a vectorizer
-components.v1.html(ut.get_LDA_visualizer(episode_got_clean, topics), width=1300, height=875, scrolling=True)
+components.v1.html(ut.get_LDA_visualizer(episode_clean, topics), width=1300, height=875, scrolling=True)
 # endregion
 
 # region FILTER TEXT
@@ -92,10 +95,15 @@ else:
         doc = nlp(filtered_text_clean)
         spacy_streamlit.visualize_ner(doc, labels=nlp.get_pipe('ner').labels, key="filtered_text")
     components.v1.html(ut.get_LDA_visualizer(filtered_text_clean, topics), width=1300, height=875, scrolling=True)
-    embedded_sentences_filtered = ut.get_sentence_embeddings(filtered_text.split(SEPARATOR)[1:])
+    if type_embedding == "sent2vec":
+        embedded_sentences_filtered = ut.get_sentence_embeddings(filtered_text.split(SEPARATOR)[1:])
+        ut.display_scatterplot_2D(dim_reductor=dim_reductor, embeddings_text=embedded_sentences, sentences_text=sentences, marker_opacity=0.5,
+                                  embeddings_filtered=embedded_sentences_filtered, sentences_filtered=filtered_text.split(SEPARATOR)[1:],filtered_marker_opacity=0.8)
+    else:
+        embedded_document_filtered = ut.get_sentence_embeddings(filtered_text)
+        ut.display_scatterplot_2D(dim_reductor=dim_reductor, embeddings_text=embedded_document, sentences_text=episode_clean.replace("_", "."), marker_opacity=0.5,
+                                  embeddings_filtered=embedded_document_filtered, sentences_filtered=filtered_text.replace("_", "."), filtered_marker_opacity=0.8)
 
-    ut.display_scatterplot_2D(dim_reductor=dim_reductor, embeddings_text=embedded_sentences, sentences_text=sentences, marker_opacity=0.5,
-                              embeddings_filtered=embedded_sentences_filtered, sentences_filtered=filtered_text.split(SEPARATOR)[1:],filtered_marker_opacity=0.8)
 
 # endregion
 
@@ -105,7 +113,7 @@ ut.title("Summary options", size=20, color=STREAMLIT_COLOR_TITLE, sidebar=True)
 model_selected = st.sidebar.selectbox("Select desired model:", MODELS)
 if filtered_text == "":
     st.warning('Generating summary with whole text, filter could not be applied.')
-    summary = ut.get_summary(episode_got_clean, model_selected)
+    summary = ut.get_summary(episode_clean, model_selected)
 else:
     summary = ut.get_summary(filtered_text, model_selected)
 summary[0]
@@ -116,21 +124,36 @@ components.v1.html(ut.get_LDA_visualizer(summary[0], topics), width=1300, height
 sentences_summary = summary[0].split('.')[:-1]
 sentences_summary = [sentence + "." for sentence in sentences_summary]
 embedded_sentences_summary = ut.get_sentence_embeddings(sentences_summary)
+embedded_document_summary = ut.get_sentence_embeddings(summary[0])
 
 if filtered_text_clean == "":
-    ut.display_scatterplot_2D(dim_reductor=dim_reductor,
-                              embeddings_text=embedded_sentences, sentences_text=sentences, marker_opacity=0.5,
-                              embeddings_summary=embedded_sentences_summary, sentences_summary=sentences_summary, summary_marker_opacity=0.8)
+    if type_embedding == "sent2vec":
+        ut.display_scatterplot_2D(dim_reductor=dim_reductor,
+                                  embeddings_text=embedded_sentences, sentences_text=sentences, marker_opacity=0.5,
+                                  embeddings_summary=embedded_sentences_summary, sentences_summary=sentences_summary, summary_marker_opacity=0.8)
+    else:
+        ut.display_scatterplot_2D(dim_reductor=dim_reductor,
+                                  embeddings_text=embedded_document, sentences_text=episode_clean.replace("_", "."), marker_opacity=0.5,
+                                  embeddings_summary=embedded_document_summary, sentences_summary=summary[0],
+                                  summary_marker_opacity=0.8)
 else:
-    ut.display_scatterplot_2D(dim_reductor=dim_reductor,
-                              embeddings_text=embedded_sentences, sentences_text=sentences, marker_opacity=0.3,
-                              embeddings_filtered=embedded_sentences_filtered, sentences_filtered=filtered_text.split(SEPARATOR)[1:], filtered_marker_opacity=0.5,
-                              embeddings_summary=embedded_sentences_summary, sentences_summary=sentences_summary, summary_marker_opacity=0.8)
+    if type_embedding == "sent2vec":
+        ut.display_scatterplot_2D(dim_reductor=dim_reductor,
+                                  embeddings_text=embedded_sentences, sentences_text=sentences, marker_opacity=0.3,
+                                  embeddings_filtered=embedded_sentences_filtered, sentences_filtered=filtered_text.split(SEPARATOR)[1:], filtered_marker_opacity=0.5,
+                                  embeddings_summary=embedded_sentences_summary, sentences_summary=sentences_summary, summary_marker_opacity=0.8)
+    else:
+        ut.display_scatterplot_2D(dim_reductor=dim_reductor,
+                                  embeddings_text=embedded_document, sentences_text=episode_clean.replace("_", "."), marker_opacity=0.3,
+                                  embeddings_filtered=embedded_document_filtered,
+                                  sentences_filtered=filtered_text.replace("_", "."), filtered_marker_opacity=0.5,
+                                  embeddings_summary=embedded_document_summary, sentences_summary=summary[0],
+                                  summary_marker_opacity=0.8)
 
 # https://towardsdatascience.com/the-ultimate-performance-metric-in-nlp-111df6c64460
 ut.title(TITLE_METRICS, 40, STREAMLIT_COLOR_SUBTITLE, text_align="left")
 rouge = Rouge()
-scores_orig = rouge.get_scores(summary[0], episode_got_clean)
+scores_orig = rouge.get_scores(summary[0], episode_clean)
 table = None
 if filtered_text != "":
     scores_filtered = rouge.get_scores(summary[0], filtered_text)
@@ -144,8 +167,21 @@ else:
 
 st.table(table)
 
-input_summary = st.text_input("Try writing your own summary and we'll compare it to our output:")
+input_summary = st.text_input(TEXT_INPUT_SUMMARY)
 if input_summary != "":
+    if type_embedding == "sent2vec":
+        embedded_sentences_input = ut.get_sentence_embeddings(input_summary.split(".")[:-1])
+        ut.display_scatterplot_2D(dim_reductor=dim_reductor,
+                                  embeddings_text=embedded_sentences, sentences_text=sentences, marker_opacity=0.3,
+                                  embeddings_summary=embedded_sentences_summary, sentences_summary=sentences_summary, summary_marker_opacity=0.8,
+                                  embeddings_input=embedded_sentences_input, sentences_input=input_summary.split("."), input_marker_opacity=0.8)
+    else:
+        embedded_document_input = ut.get_sentence_embeddings(input_summary)
+        ut.display_scatterplot_2D(dim_reductor=dim_reductor,
+                                  embeddings_text=embedded_document, sentences_text=episode_clean.replace("_", "."), marker_opacity=0.3,
+                                  embeddings_summary=embedded_document_summary, sentences_summary=summary[0],
+                                  summary_marker_opacity=0.8,
+                                  embeddings_input=embedded_document_input, sentences_input=input_summary, input_marker_opacity=0.8)
     scores = rouge.get_scores(summary[0], input_summary)
     table = ut.get_df_rouge_scores([scores[0]], ["rouge-1", "rouge-2", "rouge-l"],
                                    index=["Input text (R1)", "Input text (R2)", "Input text (RL)"])

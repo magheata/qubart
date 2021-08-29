@@ -16,18 +16,18 @@ SEPARATOR = "_"
 PUNCTUATIONS = string.punctuation
 STOPWORDS = list(STOP_WORDS)
 
-OPTIONS_DIM_REDUCTION = ('PCA','TSNE')
-OPTIONS_VISUALIZATION = ('2D', '3D')
 OPTIONS_NER = ('Off', 'On')
+OPTIONS_EMBEDDING = ("sent2vec", "doc2vec")
 MODELS = ["sshleifer/distilbart-cnn-12-6", "sshleifer/distilbart-xsum-12-3", "google/pegasus-xsum"]
 
 
-TEXT_DIM_REDUCTION = 'Select dimension reduction method:'
-TEXT_DIM_VISUALIZATION = "Select the dimension of the visualization:"
 TEXT_NUM_TOPICS = 'Choose number of topics:'
 TEXT_NER = "Named Entity Recognition"
+TEXT_EMBEDDING = "Choose embedding type:"
 TEXT_REV_EXPANDER = "Show Episode Review"
 TEXT_REV_SELECTOR = "Select episode review: "
+TEXT_INPUT_SUMMARY = "Try writing your own summary and we'll compare it to our output:"
+
 
 TITLE = "Game Of Thrones Summary Generator"
 TITLE_EDA = "1. Exploratory Data Analysis"
