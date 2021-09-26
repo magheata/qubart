@@ -14,21 +14,32 @@ import time
 import io
 import pandas as pd
 from datasets import Dataset
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+import umap
+import umap.plot
 
 def use_existing_corpus():
     ut.title(TITLE, size=60, color=STREAMLIT_COLOR_TITLE)
     corpus = ut.load_corpus(f"corpus/{CORPUS_GOT_REVIEWS}")['train']
-    review = st.sidebar.selectbox(TEXT_REV_SELECTOR, [f"Episode {i + 1}" for i in range(0, 73)], key="season")
-    # Parse the selected review to the actual index in the corpus
-    selected_ep = int(re.search(r'\d+', review).group()) - 1
-    # Print the selected episode's information (season, episode in season, episode name)
-    ut.title(f"Season {corpus[REV_SEASON][selected_ep]},"
-             f" Episode {corpus[REV_EPISODE][selected_ep]}."
-             f" {corpus[REV_TITLE][selected_ep]}", 30, STREAMLIT_COLOR_SUBTITLE)
-    # Review of the selected episode, used for visualization purposes.
-    episode = corpus[REV_REVIEW][selected_ep]
-    # Get a list of all the sentences from the review, appending a "." at the end of each one.
-    return episode
+    whole_show = st.sidebar.radio("Select episode or use whole dataset?", ["Select episode", "Use whole dataset"])
+    data = ""
+    if whole_show == "Select episode":
+        review = st.sidebar.selectbox(TEXT_REV_SELECTOR, [f"Episode {i + 1}" for i in range(0, corpus.num_rows)],
+                                      key="season")
+        # Parse the selected review to the actual index in the corpus
+        selected_ep = int(re.search(r'\d+', review).group()) - 1
+        # Print the selected episode's information (season, episode in season, episode name)
+        ut.title(f"Season {corpus[REV_SEASON][selected_ep]},"
+                 f" Episode {corpus[REV_EPISODE][selected_ep]}."
+                 f" {corpus[REV_TITLE][selected_ep]}", 30, STREAMLIT_COLOR_SUBTITLE)
+        # Review of the selected episode, used for visualization purposes.
+        data = corpus[REV_REVIEW][selected_ep]
+    else:
+        for episode in range(0, corpus.num_rows):
+            data = data + " " + corpus[REV_REVIEW][episode]
+    print(data)
+    return data
+
 
 def use_new_csv(input):
     data = io.BytesIO(input.getbuffer())
@@ -43,7 +54,8 @@ def use_new_csv(input):
         st.stop()
 
     if corpus.num_rows > 1:
-        entry_num = st.sidebar.selectbox(TEXT_ENTRY_SELECTOR, [f"Entry {i + 1}" for i in range(0, corpus.num_rows)], key="entry")
+        entry_num = st.sidebar.selectbox(TEXT_ENTRY_SELECTOR, [f"Entry {i + 1}" for i in range(0, corpus.num_rows)],
+                                         key="entry")
         selected_entry = int(re.search(r'\d+', entry_num).group()) - 1
         entry = corpus[data_column][selected_entry]
         print(corpus.num_rows)
@@ -53,12 +65,12 @@ def use_new_csv(input):
 
     return entry
 
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
 used_corpus = st.sidebar.radio("Use exising corpus or load new data?", ["Existing corpus", "Load new data"])
-
 
 if used_corpus == "Load new data":
     text_uploader = st.file_uploader("Choose data you want to use:", type=["csv", "txt", "docx", "xlsx"])
