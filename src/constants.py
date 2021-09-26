@@ -2,7 +2,7 @@ import string
 from spacy.lang.en.stop_words import STOP_WORDS
 
 CORPUS_GOT_REVIEWS = "GameOfThrones_Reviews.csv"
-CORPUS_GOT_REVIEWS_CLEAN = "GameOfThrones_Reviews_clean3.csv"
+CORPUS_GOT_REVIEWS_CLEAN = "GameOfThrones_Reviews_clean.csv"
 
 REV_SEASON = "Season"
 REV_EPISODE = "Episode"
@@ -25,7 +25,7 @@ MODELS = ["sshleifer/distilbart-cnn-12-6", "sshleifer/distilbart-xsum-12-3", "go
 TEXT_NUM_TOPICS = 'Choose number of topics:'
 TEXT_NER = "Named Entity Recognition"
 TEXT_EMBEDDING = "Choose embedding type:"
-TEXT_REV_EXPANDER = "Show Episode Review"
+TEXT_REV_EXPANDER = "Show data:"
 TEXT_REV_SELECTOR = "Select episode review: "
 TEXT_ENTRY_SELECTOR = "Select entry: "
 TEXT_INPUT_SUMMARY = "Try writing your own summary and we'll compare it to our output:"
