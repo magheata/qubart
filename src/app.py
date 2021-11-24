@@ -14,9 +14,6 @@ import time
 import io
 import pandas as pd
 from datasets import Dataset
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-import umap
-import umap.plot
 
 def use_existing_corpus():
     ut.title(TITLE, size=60, color=STREAMLIT_COLOR_TITLE)
@@ -37,7 +34,6 @@ def use_existing_corpus():
     else:
         for episode in range(0, corpus.num_rows):
             data = data + " " + corpus[REV_REVIEW][episode]
-    print(data)
     return data
 
 
@@ -58,11 +54,8 @@ def use_new_csv(input):
                                          key="entry")
         selected_entry = int(re.search(r'\d+', entry_num).group()) - 1
         entry = corpus[data_column][selected_entry]
-        print(corpus.num_rows)
     else:
         entry = corpus[data_column][0]
-    print("State", st.session_state)
-
     return entry
 
 
@@ -93,11 +86,11 @@ if used_corpus == "Load new data":
         st.error("Could not load data, please try again.")
         st.stop()
 else:
-    print("State", st.session_state)
     entry = use_existing_corpus()
 
 # Get a list of all the sentences from the review, appending a "." at the end of each one.
 sentences = re.split(REGEX_EOS, entry)
+print(sentences)
 sentences = [sentence + "." for sentence in sentences]
 # Show the episode review
 expander = st.expander(TEXT_REV_EXPANDER)
@@ -180,7 +173,6 @@ if filtered_text == "":
     st.warning('Generating summary with whole text, filter could not be applied.')
     summary = ut.get_summary(entry, model_selected)
 else:
-    print("Using filtered text")
     summary = ut.get_summary(filtered_text, model_selected)
 summary[0]
 if show_ner == "On":
