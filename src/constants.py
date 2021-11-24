@@ -13,13 +13,13 @@ STREAMLIT_COLOR_SUBTITLE = "#2471A3"
 STREAMLIT_COLOR_TITLE = "#154360"
 
 SEPARATOR = "_"
-REGEX_EOS = r"(?<!\..)[.?!]\s+"
+REGEX_EOS = r"(?<!\..)[.?!]\s*"
 PUNCTUATIONS = string.punctuation
 STOPWORDS = list(STOP_WORDS)
 
 OPTIONS_NER = ('Off', 'On')
 OPTIONS_EMBEDDING = ("sent2vec", "doc2vec")
-MODELS = ["sshleifer/distilbart-cnn-12-6", "sshleifer/distilbart-xsum-12-3", "google/pegasus-xsum", "facebook/bart-large-cnn"]
+MODELS = ["sshleifer/distilbart-cnn-12-6", "sshleifer/distilbart-xsum-12-3", "google/pegasus-xsum", "facebook/bart-large-cnn", "google/pegasus-large"]
 
 
 TEXT_NUM_TOPICS = 'Choose number of topics:'

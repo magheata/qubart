@@ -39,7 +39,7 @@ def get_sentence_embeddings(input_data, model_name='sentence-transformers/paraph
     return sentence_embeddings.detach().numpy()
 
 
-@st.cache(persist=True, suppress_st_warning=True)
+@st.cache(suppress_st_warning=True)
 def load_corpus(data_files, ext_type='csv'):
     '''
     '''
@@ -52,7 +52,7 @@ def filter_corpus(corpus, element, filter_with):
     return corpus.filter(lambda filtered_corpus: filtered_corpus[element].startswith(filter_with))
 
 
-@st.cache(persist=True, suppress_st_warning=True)
+@st.cache(suppress_st_warning=True)
 def get_script_episode(corpus, season, episode):
     '''
     '''
@@ -60,7 +60,7 @@ def get_script_episode(corpus, season, episode):
     return filter_corpus(data_season, 'Episode', episode)
 
 
-@st.cache(persist=True, suppress_st_warning=True)
+@st.cache(suppress_st_warning=True)
 def get_full_text(input_text):
     return ''.join(input_text)
 
@@ -80,6 +80,9 @@ def get_similar_sentences(sentence, other_sentences, similarity_threshold=0.7):
     '''
     '''
     sims = cosine_similarity(sentence, other_sentences)
+    print("sims", sims)
+    print(np.where(sims.reshape(-1) >= similarity_threshold)[0])
+    #print([sims[i] for i in np.where(sims.reshape(-1) >= similarity_threshold)[0]])
     return np.where(sims.reshape(-1) >= similarity_threshold)[0]
 
 
