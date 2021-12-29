@@ -1,6 +1,7 @@
 # Qubart: Automatic Text Summarization with Topic Selection
 ***
 
+Source project for the thesis ["Automatic text summarization using a filter-based approach"](https://www.researchgate.net/publication/355339249_Automatic_text_summarization_using_a_filter-based_approach).
 
 <img src = "img/QuBART_arquitectura_color.png"></img>
 
