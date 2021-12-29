@@ -3,7 +3,7 @@
 
 Source project for the MS thesis ["Automatic text summarization using a filter-based approach"](https://www.researchgate.net/publication/355339249_Automatic_text_summarization_using_a_filter-based_approach).
 
-<img src = "img/QuBART_arquitectura_color.png"></img>
+<img src = "img/QuBART_architecture2.png"></img>
 
 The architecture of QuBART is as follows: 
 
