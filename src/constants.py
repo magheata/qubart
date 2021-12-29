@@ -1,8 +1,12 @@
+"""
+@author: Miruna Andreea Gheata
+"""
 import string
 from spacy.lang.en.stop_words import STOP_WORDS
 
 CORPUS_GOT_REVIEWS = "GameOfThrones_Reviews.csv"
-CORPUS_GOT_REVIEWS_CLEAN = "GameOfThrones_Reviews_clean.csv"
+
+LEAD_N = 3
 
 REV_SEASON = "Season"
 REV_EPISODE = "Episode"
@@ -20,7 +24,12 @@ STOPWORDS = list(STOP_WORDS)
 OPTIONS_NER = ('Off', 'On')
 OPTIONS_EMBEDDING = ("sent2vec", "doc2vec")
 MODELS = ["sshleifer/distilbart-cnn-12-6", "sshleifer/distilbart-xsum-12-3", "google/pegasus-xsum", "facebook/bart-large-cnn", "google/pegasus-large"]
+AVAILABLE_TEXT_FORMATS = ["csv"]
 
+TEXT_REF_OPTIONS_FILTER = ["Original text", "Filtered text", "Baseline (Lead-3)"]
+TEXT_REF_OPTIONS_NO_FILTER = ["Original text", "Baseline (Lead-3)"]
+TEXT_REF_OPTIONS_USER_FILTER = ["Original text", "Filtered text", "Baseline (Lead-3)"]
+TEXT_REF_OPTIONS_USER_NO_FILTER = ["Original text", "Baseline (Lead-3)"]
 
 TEXT_NUM_TOPICS = 'Choose number of topics:'
 TEXT_NER = "Named Entity Recognition"
@@ -29,8 +38,7 @@ TEXT_REV_EXPANDER = "Show data:"
 TEXT_REV_SELECTOR = "Select episode review: "
 TEXT_ENTRY_SELECTOR = "Select entry: "
 TEXT_INPUT_SUMMARY = "Try writing your own summary and we'll compare it to our output:"
-
-
+TEXT_SELECT_CORPUS = ""
 TITLE = "Game Of Thrones Summary Generator"
 TITLE_EDA = "1. Exploratory Data Analysis"
 TITLE_FILTER = "2. Filter text"
