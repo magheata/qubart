@@ -7,7 +7,6 @@ import os
 import pandas as pd
 import re
 import spacy
-import spacy_streamlit
 import streamlit as st
 import time
 import utils as ut
@@ -155,9 +154,6 @@ ut.title("EDA options", size=20, color=STREAMLIT_COLOR_TITLE, sidebar=True)
 # The user can choose how many topics to look for in the text.
 topics = st.sidebar.slider(TEXT_NUM_TOPICS, 1, 10, 5)
 
-# The user can choose to visualize the entities within the text.
-show_ner = st.sidebar.radio(TEXT_NER, OPTIONS_NER)
-
 # If sent2vec chosen, show the scatterplot of the sentence embeddings.
 if type_embedding == "sent2vec":
     st.header('2D Visualization')
@@ -165,12 +161,6 @@ if type_embedding == "sent2vec":
         'For more detail about each point (just in case it is difficult to read the annotation), you can hover around each points to see the words. You can expand the visualization by clicking expand symbol in the top right corner of the visualization.')
     ut.display_scatterplot_2D(dim_reductor=dim_reductor, embeddings_text=embedded_sentences, sentences_text=sentences)
 
-# Creating a spaCy object that will be used to detect the entities within the text.
-nlp = spacy.load(SPACY_LANG_MODEL)
-if show_ner == "On":
-    doc = nlp(entry)
-    # Show the different entities.
-    spacy_streamlit.visualize_ner(doc, labels=nlp.get_pipe('ner').labels)
 
 # Computing and showing the different topics found in the entry text.
 components.v1.html(ut.get_LDA_visualizer(entry, topics), width=1300, height=875, scrolling=True)
@@ -205,10 +195,7 @@ if filtered_text_clean == "":
 else:
     # Show user the filtered text obtained after applying the filter.
     filtered_text_clean
-    # If entity recognition is activated, show entities from the filtered text.
-    if show_ner == "On":
-        doc = nlp(filtered_text_clean)
-        spacy_streamlit.visualize_ner(doc, labels=nlp.get_pipe('ner').labels, key="filtered_text")
+
     # Computing and showing the different topics found in the filtered text.
     components.v1.html(ut.get_LDA_visualizer(filtered_text_clean, topics), width=1300, height=875, scrolling=True)
     # If sentence embedding selected, compute and show the sentence embeddings.
@@ -242,10 +229,7 @@ else:
     summary = ut.get_summary(filtered_text, model_selected)
 # Show summary to the user.
 summary[0]
-# If entity recognition is activated, show entities from the generated summary.
-if show_ner == "On":
-    doc = nlp(summary[0])
-    spacy_streamlit.visualize_ner(doc, labels=nlp.get_pipe('ner').labels, key="summary")
+
 # Computing and showing the different topics found in the generated summary.
 components.v1.html(ut.get_LDA_visualizer(summary[0], topics), width=1300, height=875, scrolling=True)
 
