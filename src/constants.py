@@ -23,7 +23,7 @@ STOPWORDS = list(STOP_WORDS)
 
 OPTIONS_NER = ('Off', 'On')
 OPTIONS_EMBEDDING = ("sent2vec", "doc2vec")
-MODELS = ["sshleifer/distilbart-cnn-12-6", "sshleifer/distilbart-xsum-12-3", "google/pegasus-xsum", "facebook/bart-large-cnn", "google/pegasus-large"]
+MODELS = ["sshleifer/distilbart-cnn-12-6", "sshleifer/distilbart-xsum-12-3"]
 AVAILABLE_TEXT_FORMATS = ["csv"]
 
 TEXT_REF_OPTIONS_FILTER = ["Original text", "Filtered text", "Baseline (Lead-3)"]
