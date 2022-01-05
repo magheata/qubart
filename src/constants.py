@@ -13,6 +13,7 @@ REV_EPISODE = "Episode"
 REV_REVIEW = "Episode recap"
 REV_TITLE = "Episode title"
 
+
 STREAMLIT_COLOR_SUBTITLE = "#2471A3"
 STREAMLIT_COLOR_TITLE = "#154360"
 
