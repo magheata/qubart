@@ -6,7 +6,6 @@ import io
 import os
 import pandas as pd
 import re
-import spacy
 import streamlit as st
 import time
 import utils as ut
@@ -23,39 +22,6 @@ st.set_option('deprecation.showPyplotGlobalUse', False)
 # endregion
 
 # region TEXT SELECTION
-def use_existing_corpus():
-    """
-    Method used when the user chooses to use the Game of Thrones dataset as corpus.
-    :return: data containing the chosen episode.
-    """
-    # Show the title of the Streamnlit page.
-    ut.title(TITLE, size=60, color=STREAMLIT_COLOR_TITLE)
-    # Load the Game of Thrones corpus.
-    corpus = ut.load_corpus(f"corpus/{CORPUS_GOT_REVIEWS}")['train']
-    # Prompt the user if they want to select the whole show or just an episode.
-    whole_show = st.sidebar.radio("Select episode or use whole dataset?", ["Select episode", "Use whole dataset"])
-    data = ""
-    # If the user has chosen to use only an episode as input text
-    if whole_show == "Select episode":
-        # Select the chosen episode.
-        review = st.sidebar.selectbox(TEXT_REV_SELECTOR, [f"Episode {i + 1}" for i in range(0, corpus.num_rows)],
-                                      key="season")
-        # Parse the selected review to the actual index in the corpus.
-        selected_ep = int(re.search(r'\d+', review).group()) - 1
-        # Print the selected episode's information (season, episode in season, episode name).
-        ut.title(f"Season {corpus[REV_SEASON][selected_ep]},"
-                 f" Episode {corpus[REV_EPISODE][selected_ep]}."
-                 f" {corpus[REV_TITLE][selected_ep]}", 30, STREAMLIT_COLOR_SUBTITLE)
-        # Review of the selected episode, used for visualization purposes.
-        data = corpus[REV_REVIEW][selected_ep]
-    else:
-        # Concatenate the text of all episodes to a single text.
-        for episode in range(0, corpus.num_rows):
-            data = data + " " + corpus[REV_REVIEW][episode]
-    # Return the text of the selected option.
-    return data
-
-
 def use_new_csv(input):
     """
     Method used to select the input data from a CSV local file.
@@ -125,9 +91,6 @@ if used_corpus == "Load new data":
     else:
         st.error("Could not load data, please try again.")
         st.stop()
-# If user wants to use existing data, load Game of Thrones corpus.
-else:
-    entry = use_existing_corpus()
 
 # Get a list of all the sentences from the review, appending a "." at the end of each one.
 sentences = re.split(REGEX_EOS, entry)
