@@ -58,38 +58,33 @@ def use_new_csv(input):
     return entry
 
 
-# Make user choose type of data to be used.
-used_corpus = st.sidebar.radio("Use exising corpus or load new data?", ["Existing corpus", "Load new data"])
-
-# If user want new data
-if used_corpus == "Load new data":
-    # User can choose from uploading a text file
-    text_uploader = st.file_uploader("Choose data you want to use:", type=AVAILABLE_TEXT_FORMATS)
-    # Or typing a text.
-    text_input = st.text_input("Or write your own data: ")
-    # If user has selected a text file and written a text, return error message
-    if text_uploader and text_input:
-        st.error("Choose either uploading a file or your written input. ")
-        st.stop()
-    # If user has uploaded a text file
-    elif text_uploader:
-        success_msg = st.success("Data uploaded correctly!")
-        time.sleep(3)
-        success_msg.empty()
-        # If the file has the correct format, load the data.
-        if text_uploader.type == "text/csv":
-            entry = use_new_csv(text_uploader)
-    # If user has typed a text
-    elif text_input:
-        success_msg = st.success("Data uploaded correctly!")
-        time.sleep(3)
-        success_msg.empty()
-        # The data to be used will be the text provided.
-        entry = text_input
-    # If error, notify user and stop application.
-    else:
-        st.error("Could not load data, please try again.")
-        st.stop()
+# User can choose from uploading a text file
+text_uploader = st.file_uploader("Choose data you want to use:", type=AVAILABLE_TEXT_FORMATS)
+# Or typing a text.
+text_input = st.text_input("Or write your own data: ")
+# If user has selected a text file and written a text, return error message
+if text_uploader and text_input:
+    st.error("Choose either uploading a file or your written input. ")
+    st.stop()
+# If user has uploaded a text file
+elif text_uploader:
+    success_msg = st.success("Data uploaded correctly!")
+    time.sleep(3)
+    success_msg.empty()
+    # If the file has the correct format, load the data.
+    if text_uploader.type == "text/csv":
+        entry = use_new_csv(text_uploader)
+# If user has typed a text
+elif text_input:
+    success_msg = st.success("Data uploaded correctly!")
+    time.sleep(3)
+    success_msg.empty()
+    # The data to be used will be the text provided.
+    entry = text_input
+# If error, notify user and stop application.
+else:
+    st.error("Could not load data, please try again.")
+    st.stop()
 
 # Get a list of all the sentences from the review, appending a "." at the end of each one.
 sentences = re.split(REGEX_EOS, entry)
