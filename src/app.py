@@ -18,7 +18,6 @@ from streamlit import components
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
-
 # endregion
 
 # region TEXT SELECTION
