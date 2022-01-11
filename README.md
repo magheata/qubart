@@ -1,4 +1,4 @@
-# Qubart: Automatic Text Summarization with Topic Selection
+# QuBART: Automatic Text Summarization with Topic Selection
 ***
 
 Source project for the MS thesis ["Automatic text summarization using a filter-based approach"](https://www.researchgate.net/publication/355339249_Automatic_text_summarization_using_a_filter-based_approach).
