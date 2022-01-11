@@ -11,4 +11,5 @@ The architecture of QuBART is as follows:
 * **Transformer module**: The input of this module will be the filtered text from the filtering module. We apply BART to obtain a summary related to topic A from the input document. 
 
 ## Using Streamlit 
+To run the app, type into the terminal: 
 ```streamlit run app.py```
